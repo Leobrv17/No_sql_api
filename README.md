@@ -26,7 +26,7 @@ Backend pour un service de création de formulaires en ligne inspiré de Google 
 1. Cloner le repository
 ```bash
 git clone <repo-url>
-cd forms-api
+cd No_sql_api
 ```
 
 2. Copier le fichier d'environnement

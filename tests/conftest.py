@@ -25,7 +25,7 @@ def get_test_settings() -> Settings:
         Settings: Configuration pour les tests
     """
     return Settings(
-        mongodb_url="mongodb://localhost:27017",
+        mongodb_url="mongodb://forms-mongodb-test:27017",
         mongodb_db_name="forms_db_test",
         secret_key="test-secret-key",
         debug=True

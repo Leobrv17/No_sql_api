@@ -1,0 +1,28 @@
+# Dockerfile pour exécuter les tests
+FROM python:3.11-slim
+
+# Variables d'environnement
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Répertoire de travail
+WORKDIR /app
+
+# Installer les dépendances système
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copier les requirements
+COPY requirements.txt .
+
+# Installer les dépendances avec pytest
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install pytest-cov
+
+# Copier le code
+COPY . .
+
+# Commande par défaut : exécuter les tests
+CMD ["pytest", "tests/unit/test_models.py"]

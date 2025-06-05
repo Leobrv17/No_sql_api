@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # MongoDB pour les tests SANS authentification
+  mongodb-test:
+    image: mongo:7.0
+    container_name: forms-mongodb-test
+    ports:
+      - "27018:27017"  # Port différent pour éviter les conflits
+    environment:
+      # Pas d'authentification pour les tests
+      MONGO_INITDB_DATABASE: forms_db_test
+    networks:
+      - test-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Service de tests
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: forms-test-runner
+    environment:
+      # Base de données de test sans auth
+      MONGODB_URL: "mongodb://mongodb-test:27017"
+      MONGODB_DB_NAME: "forms_db_test"
+
+      # Autres configs
+      SECRET_KEY: "test-secret-key"
+      DEBUG: "true"
+    depends_on:
+      mongodb-test:
+        condition: service_healthy
+    networks:
+      - test-network
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - ./htmlcov:/app/htmlcov  # Rapport de couverture
+    command: >
+      sh -c "
+        echo 'Installing bcrypt...' &&
+        pip install bcrypt &&
+        echo 'Waiting for MongoDB...' &&
+        sleep 5 &&
+        echo 'Running tests...' &&
+        pytest
+      "
+
+networks:
+  test-network:
+    driver: bridge
