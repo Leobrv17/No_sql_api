@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Service MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: forms-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secretpassword
+      MONGO_INITDB_DATABASE: forms_db
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - forms-network
+
+  # Service API FastAPI
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: forms-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Application
+      APP_NAME: "Forms API"
+      DEBUG: "true"
+
+      # Database
+      MONGODB_URL: "mongodb://admin:secretpassword@mongodb:27017/forms_db?authSource=admin"
+      MONGODB_DB_NAME: "forms_db"
+
+      # Security
+      SECRET_KEY: "your-super-secret-key-change-this-in-production"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+
+      # CORS
+      CORS_ORIGINS: '["http://localhost:3000", "http://localhost:8080"]'
+    depends_on:
+      - mongodb
+    networks:
+      - forms-network
+    volumes:
+      - ./app:/app/app  # Pour le développement avec hot-reload
+
+  # Service Mongo Express (Interface web pour MongoDB)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: forms-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: secretpassword
+      ME_CONFIG_MONGODB_URL: "mongodb://admin:secretpassword@mongodb:27017/"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: pass
+    depends_on:
+      - mongodb
+    networks:
+      - forms-network
+
+networks:
+  forms-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  mongodb_config:
