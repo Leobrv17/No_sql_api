@@ -19,37 +19,55 @@ services:
       retries: 5
 
   # Service de tests
-  test-runner:
-    build:
-      context: .
-      dockerfile: Dockerfile.test
-    container_name: forms-test-runner
-    environment:
-      # Base de données de test sans auth
-      MONGODB_URL: "mongodb://mongodb-test:27017"
-      MONGODB_DB_NAME: "forms_db_test"
+#  test-runner:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.test
+#    container_name: forms-test-runner
+#    environment:
+#      # Base de données de test sans auth
+#      MONGODB_URL: "mongodb://mongodb-test:27017"
+#      MONGODB_DB_NAME: "forms_db_test"
+#
+#      # Autres configs
+#      SECRET_KEY: "test-secret-key"
+#      DEBUG: "true"
+#    depends_on:
+#      mongodb-test:
+#        condition: service_healthy
+#    networks:
+#      - test-network
+#    volumes:
+#      - ./app:/app/app
+#      - ./tests:/app/tests
+#      - ./htmlcov:/app/htmlcov  # Rapport de couverture
+#    command: >
+#      sh -c "
+#        echo 'Installing bcrypt...' &&
+#        pip install bcrypt &&
+#        echo 'Waiting for MongoDB...' &&
+#        sleep 5 &&
+#        echo 'Running tests...' &&
+#        pytest
+#      "
 
-      # Autres configs
-      SECRET_KEY: "test-secret-key"
-      DEBUG: "true"
+  # Service Mongo Express (Interface web pour MongoDB)
+  mongo-express-test:
+    image: mongo-express:latest
+    container_name: forms-mongo-express-test
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: secretpassword
+      ME_CONFIG_MONGODB_URL: "mongodb://forms-mongodb-test:27017/"
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: pass
     depends_on:
-      mongodb-test:
-        condition: service_healthy
+      - mongodb-test
     networks:
       - test-network
-    volumes:
-      - ./app:/app/app
-      - ./tests:/app/tests
-      - ./htmlcov:/app/htmlcov  # Rapport de couverture
-    command: >
-      sh -c "
-        echo 'Installing bcrypt...' &&
-        pip install bcrypt &&
-        echo 'Waiting for MongoDB...' &&
-        sleep 5 &&
-        echo 'Running tests...' &&
-        pytest
-      "
 
 networks:
   test-network:

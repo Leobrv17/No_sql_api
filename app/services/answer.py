@@ -5,6 +5,9 @@ Contient la logique métier des soumissions de formulaires.
 
 from typing import List, Optional
 from datetime import datetime
+
+from bson import ObjectId
+
 from app.models.form import Form
 from app.models.question import Question
 from app.models.answer import Answer, FormResponse
@@ -15,6 +18,7 @@ from app.exceptions.http import (
     BadRequestException,
     ForbiddenException
 )
+from beanie import PydanticObjectId
 
 
 async def validate_answers(
@@ -32,10 +36,10 @@ async def validate_answers(
         tuple: (is_valid, error_messages)
     """
     errors = []
-
     # Récupérer toutes les questions
+    form_oid = ObjectId(form_id)
     questions = await Question.find(
-        Question.form.id == form_id
+        Question.form.id == form_oid
     ).to_list()
 
     # Créer un mapping question_id -> question
@@ -121,7 +125,8 @@ async def submit_form_response(
         FormResponse: Soumission enregistrée
     """
     # Vérifier que le formulaire existe et accepte les réponses
-    form = await Form.get(form_id)
+
+    form = await Form.get(form_id, fetch_links=True)
     if not form:
         raise NotFoundException("Form not found")
 
@@ -136,20 +141,17 @@ async def submit_form_response(
         form_id,
         [a.model_dump() for a in response_data.answers]
     )
-
     if not is_valid:
         raise BadRequestException(f"Invalid answers: {', '.join(errors)}")
-
     # Créer la soumission
     form_response = FormResponse(
-        form=form,
+        form=form.id,
         respondent=respondent,
         is_valid=is_valid,
         ip_address=metadata.get("ip_address") if metadata else None,
         user_agent=metadata.get("user_agent") if metadata else None
     )
     await form_response.save()
-
     # Créer les réponses individuelles
     for answer_data in response_data.answers:
         question = await Question.get(answer_data.question_id)
@@ -159,7 +161,6 @@ async def submit_form_response(
             value=answer_data.value
         )
         await answer.save()
-
     # Incrémenter le compteur
     form.response_count += 1
     await form.save()
@@ -168,9 +169,9 @@ async def submit_form_response(
 
 
 async def get_form_responses(
-        form_id: str,
-        skip: int = 0,
-        limit: int = 100
+    form_id: str,
+    skip: int = 0,
+    limit: int = 100
 ) -> List[FormResponse]:
     """
     Récupère toutes les soumissions d'un formulaire.
@@ -183,8 +184,12 @@ async def get_form_responses(
     Returns:
         List[FormResponse]: Liste des soumissions
     """
+
+    form_obj_id = PydanticObjectId(form_id)
+
+    # Use direct field reference
     responses = await FormResponse.find(
-        FormResponse.form.id == form_id
+        FormResponse.form.id == form_obj_id
     ).skip(skip).limit(limit).sort(-FormResponse.submitted_at).to_list()
 
     return responses

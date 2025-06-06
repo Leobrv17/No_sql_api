@@ -71,6 +71,8 @@ async def list_forms(
         List[FormResponse]: Liste des formulaires
     """
     forms = await get_user_forms(current_user, skip, limit)
+    for form in forms:
+        await form.fetch_link("owner")
 
     return [
         FormResponse(
@@ -80,7 +82,7 @@ async def list_forms(
             is_active=form.is_active,
             accepts_responses=form.accepts_responses,
             requires_auth=form.requires_auth,
-            owner_id=str(form.owner.id),
+            owner_id=str(form.owner.id),  # maintenant que le lien est résolu
             response_count=form.response_count,
             created_at=form.created_at,
             updated_at=form.updated_at
@@ -106,6 +108,7 @@ async def get_form(
     """
     form = await get_form_by_id(form_id, current_user)
     questions = await get_form_questions(form_id)
+    await form.fetch_link("owner")
 
     return FormWithQuestions(
         _id=str(form.id),
@@ -140,6 +143,7 @@ async def update_existing_form(
         FormResponse: Formulaire mis à jour
     """
     form = await update_form(form_id, form_update, current_user)
+    await form.fetch_link("owner")
 
     return FormResponse(
         _id=str(form.id),

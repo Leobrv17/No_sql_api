@@ -32,7 +32,7 @@ async def test_create_form_success(
     }
 
     response = await client.post(
-        "/api/v1/forms",
+        "/api/v1/forms/",
         json=form_data,
         headers=auth_headers
     )
@@ -62,7 +62,7 @@ async def test_create_form_unauthorized(client: AsyncClient):
     form_data = {"title": "Test"}
 
     response = await client.post(
-        "/api/v1/forms",
+        "/api/v1/forms/",
         json=form_data
     )
 
@@ -98,7 +98,7 @@ async def test_list_user_forms(
         await form.save()
 
     response = await client.get(
-        "/api/v1/forms",
+        "/api/v1/forms/",
         headers=auth_headers
     )
 

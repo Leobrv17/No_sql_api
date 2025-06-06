@@ -78,9 +78,9 @@ async def get_form_by_id(
     form = await Form.get(form_id)
     if not form:
         raise NotFoundException("Form not found")
-
+    owner = await form.owner.fetch()
     # Vérifier les permissions si user fourni
-    if user and form.owner.id != user.id:
+    if user and owner.id != user.id:
         raise ForbiddenException("Access denied")
 
     return form

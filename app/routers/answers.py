@@ -65,7 +65,7 @@ async def submit_form(
 
     return FormResponseDetail(
         _id=str(form_response.id),
-        form_id=str(form_response.form.id),
+        form_id=str(form_response.form),
         respondent_id=str(form_response.respondent.id) if form_response.respondent else None,
         submitted_at=form_response.submitted_at,
         is_complete=form_response.is_complete,
@@ -73,7 +73,7 @@ async def submit_form(
         answers=[
             AnswerResponse(
                 _id=str(a.id),
-                question_id=str(a.question.id),
+                question_id=str(a.question),
                 value=a.value,
                 form_response_id=a.form_response,
                 created_at=a.created_at
@@ -107,7 +107,6 @@ async def list_form_responses(
 
     # Récupérer les réponses
     responses = await get_form_responses(form_id, skip, limit)
-
     # Construire les détails pour chaque réponse
     result = []
     for response in responses:
@@ -115,7 +114,7 @@ async def list_form_responses(
         result.append(
             FormResponseDetail(
                 _id=str(response.id),
-                form_id=str(response.form.id),
+                form_id = str(response.form.ref.id),
                 respondent_id=str(response.respondent.id) if response.respondent else None,
                 submitted_at=response.submitted_at,
                 is_complete=response.is_complete,
@@ -123,7 +122,7 @@ async def list_form_responses(
                 answers=[
                     AnswerResponse(
                         _id=str(a.id),
-                        question_id=str(a.question.id),
+                        question_id=str(a.question.ref.id),
                         value=a.value,
                         form_response_id=a.form_response,
                         created_at=a.created_at

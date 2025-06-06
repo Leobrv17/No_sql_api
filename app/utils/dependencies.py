@@ -10,6 +10,7 @@ from jose import JWTError
 from app.models.user import User
 from app.schemas.user import TokenData
 from app.utils.security import decode_access_token
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 # Schéma OAuth2 pour l'authentification
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -76,22 +77,35 @@ async def get_current_active_user(
     return current_user
 
 
+# async def get_optional_current_user(
+#         token: Optional[str] = Depends(oauth2_scheme)
+# ) -> Optional[User]:
+#     """
+#     Récupère l'utilisateur si un token est fourni.
+#     Ne lève pas d'exception si pas de token.
+#
+#     Args:
+#         token: Token JWT optionnel
+#
+#     Returns:
+#         Optional[User]: Utilisateur si authentifié, None sinon
+#     """
+#     if not token:
+#         return None
+#
+#     try:
+#         return await get_current_user(token)
+#     except HTTPException:
+#         return None
+
+security = HTTPBearer(auto_error=False)  # auto_error=False pour ne pas lever 401 automatiquement
+
 async def get_optional_current_user(
-        token: Optional[str] = Depends(oauth2_scheme)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ) -> Optional[User]:
-    """
-    Récupère l'utilisateur si un token est fourni.
-    Ne lève pas d'exception si pas de token.
-
-    Args:
-        token: Token JWT optionnel
-
-    Returns:
-        Optional[User]: Utilisateur si authentifié, None sinon
-    """
-    if not token:
+    if credentials is None:
         return None
-
+    token = credentials.credentials
     try:
         return await get_current_user(token)
     except HTTPException:

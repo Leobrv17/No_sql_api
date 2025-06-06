@@ -86,7 +86,7 @@ async def update_existing_question(
     await get_form_by_id(form_id, current_user)
 
     question = await update_question(question_id, question_update)
-
+    await question.fetch_link("form")
     return QuestionResponse(
         _id=str(question.id),
         form_id=str(question.form.id),

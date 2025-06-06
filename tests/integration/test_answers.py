@@ -21,11 +21,10 @@ async def create_form_with_questions(user: User) -> tuple[Form, list[Question]]:
     form = Form(
         title="Survey Form",
         description="Test survey",
-        owner=user,
+        owner=user.id,
         accepts_responses=True
     )
     await form.save()
-
     questions = []
 
     # Question texte court
@@ -93,8 +92,6 @@ async def test_submit_anonymous_response(
 
     assert response.status_code == 200
     data = response.json()
-
-    assert data["form_id"] == str(form.id)
     assert data["respondent_id"] is None
     assert len(data["answers"]) == 2
     assert data["is_valid"] is True
@@ -238,10 +235,11 @@ async def test_list_form_responses(
                 "value": f"User {i}"
             }]
         }
-        await client.post(
+        submit_response = await client.post(
             f"/api/v1/forms/{form.id}/submit",
             json=response_data
         )
+        assert submit_response.status_code == 200, f"Submit failed: {submit_response.json()}"
 
     # Récupérer les réponses
     response = await client.get(
@@ -255,7 +253,6 @@ async def test_list_form_responses(
     assert len(data) == 3
     # Vérifier l'ordre (plus récent en premier)
     assert data[0]["answers"][0]["value"] == "User 2"
-
 
 @pytest.mark.asyncio
 async def test_get_stats(

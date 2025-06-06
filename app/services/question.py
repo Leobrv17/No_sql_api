@@ -9,6 +9,8 @@ from app.models.question import Question
 from app.models.form import Form
 from app.schemas.question import QuestionCreate, QuestionUpdate, QuestionResponse
 from app.exceptions.http import NotFoundException
+from fastapi import HTTPException, status
+from app.models.question import QuestionType
 
 
 async def create_question(
@@ -25,6 +27,26 @@ async def create_question(
     Returns:
         Question: Question créée
     """
+
+    if question_data.question_type == QuestionType.MULTIPLE_CHOICE:
+        if not question_data.options or len(question_data.options) < 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="QuestionType.MULTIPLE_CHOICE requires options"
+            )
+    if question_data.question_type == QuestionType.CHECKBOX:
+        if not question_data.options or len(question_data.options) < 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="QuestionType.CHECKBOX requires options"
+            )
+    if question_data.question_type == QuestionType.DROPDOWN:
+        if not question_data.options or len(question_data.options) < 1:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="QuestionType.DROPDOWN requires options"
+            )
+
     # Vérifier que le formulaire existe
     form = await Form.get(form_id)
     if not form:
