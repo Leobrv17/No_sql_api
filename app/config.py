@@ -32,7 +32,14 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # CORS
-    cors_origins: List[str] = ["http://localhost:3000"]
+    cors_allow_credentials: bool = True
+    cors_allow_methods: List[str] = ["*"]
+    cors_allow_headers: List[str] = ["*"]
+    cors_origins: List[str] = ["http://localhost:3000", 
+                               "http://localhost:4200",  # Angular
+                               "http://localhost:4000",  # Angular SSR
+                               "http://127.0.0.1:4200",
+                               "http://127.0.0.1:4000"]
 
     class Config:
         env_file = ".env"
