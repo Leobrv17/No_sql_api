@@ -28,28 +28,21 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Application
       APP_NAME: "Forms API"
       DEBUG: "true"
-
-      # Database
       MONGODB_URL: "mongodb://admin:secretpassword@mongodb:27017/forms_db?authSource=admin"
       MONGODB_DB_NAME: "forms_db"
-
-      # Security
       SECRET_KEY: "your-super-secret-key-change-this-in-production"
       ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-
-      # CORS
       CORS_ORIGINS: '["http://localhost:3000", "http://localhost:8080", "http://localhost:4200"]'
     depends_on:
       - mongodb
     networks:
       - forms-network
     volumes:
-      - ./app:/app/app  # Pour le développement avec hot-reload
+      - ./app:/app/app  # Corrigé pour éviter les erreurs de montage
 
-  # Service Mongo Express (Interface web pour MongoDB)
+  # Service Mongo Express
   mongo-express:
     image: mongo-express:latest
     container_name: forms-mongo-express
@@ -64,6 +57,13 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: pass
     depends_on:
       - mongodb
+    command: >
+      sh -c "
+        echo '⏳ Waiting for MongoDB...';
+        while ! nc -z mongodb 27017; do sleep 1; done;
+        echo '✅ MongoDB is up!';
+        docker-entrypoint.sh
+      "
     networks:
       - forms-network
 
